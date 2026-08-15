@@ -170,7 +170,7 @@ function App() {
 
       <p className="signature">
         <span>
-          편두통이 심하지만 투혼중인 <b>dhee</b>
+          API로 문제로 마음고생한 <b>dhee</b>
         </span>
       </p>
     </div>
