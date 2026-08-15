@@ -1,0 +1,548 @@
+/* ===========================================================
+   날씨앱 — 레트로퓨처리즘 (과거가 상상한 미래)
+   아르데코 세리프 + 우주시대 궤도 계기판 + 얇은 금빛 헤어라인.
+   과거(일출) · 현재(관측) · 미래(예보)를 세로로 잇는 구성.
+   =========================================================== */
+
+:root {
+  --gold: #d9b26a;
+  --gold-dim: rgba(217, 178, 106, 0.34);
+  --ink: #f2eee6;
+  --ink-dim: rgba(242, 238, 230, 0.6);
+  --panel: rgba(255, 255, 255, 0.045);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ── 하늘 ─────────────────────────────────────── */
+.sky {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--ink);
+  background: radial-gradient(120% 90% at 50% 0%, var(--sky-1), var(--sky-2) 55%, var(--sky-3));
+  transition: background 1.4s var(--ease);
+}
+
+/* 날씨·시간대별 팔레트. --accent 는 태양/막대/강조에 쓰입니다. */
+.sky--loading      { --sky-1:#2b2a44; --sky-2:#1b1a2e; --sky-3:#0e0d18; --accent:#d9b26a; }
+.sky--clear-day    { --sky-1:#2e5f96; --sky-2:#1c3a63; --sky-3:#101c33; --accent:#f0b653; }
+.sky--clear-night  { --sky-1:#241f4d; --sky-2:#141131; --sky-3:#07060f; --accent:#c9c4f0; }
+.sky--clouds-day   { --sky-1:#4a5a72; --sky-2:#2d394d; --sky-3:#151b26; --accent:#dcc79a; }
+.sky--clouds-night { --sky-1:#1e2138; --sky-2:#131523; --sky-3:#080910; --accent:#9aa6c9; }
+.sky--rain         { --sky-1:#22415a; --sky-2:#142a3c; --sky-3:#08151f; --accent:#6fc4e8; }
+.sky--snow         { --sky-1:#41566b; --sky-2:#28374a; --sky-3:#121a24; --accent:#dceaf5; }
+.sky--thunder      { --sky-1:#33254f; --sky-2:#1d1533; --sky-3:#0b0716; --accent:#e8c94a; }
+.sky--mist         { --sky-1:#4b4f57; --sky-2:#2e3238; --sky-3:#15171b; --accent:#cfd3d8; }
+
+/* 미세 격자 — 계기판 배경 */
+.grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image:
+    linear-gradient(var(--gold-dim) 1px, transparent 1px),
+    linear-gradient(90deg, var(--gold-dim) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(85% 65% at 50% 30%, #000 20%, transparent 100%);
+  -webkit-mask-image: radial-gradient(85% 65% at 50% 30%, #000 20%, transparent 100%);
+}
+
+/* 상단 광원 */
+.glow {
+  position: absolute;
+  top: -22vh;
+  left: 50%;
+  width: min(760px, 130vw);
+  height: min(760px, 130vw);
+  transform: translateX(-50%);
+  pointer-events: none;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 22%, transparent), transparent 62%);
+  transition: background 1.4s var(--ease);
+}
+
+/* ── 레이아웃 ─────────────────────────────────── */
+.shell {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  padding: clamp(22px, 5vw, 44px) 20px;
+  box-sizing: border-box;
+}
+
+/* ===========================================================
+   현재 관측 패널
+   =========================================================== */
+.panel {
+  position: relative;
+  width: 100%;
+  padding: 26px 24px 22px;
+  background: var(--panel);
+  border: 1px solid var(--gold-dim);
+  border-radius: 2px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: rise 0.8s var(--ease) both;
+}
+
+/* 아르데코 모서리 */
+.panel::before,
+.panel::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--gold);
+  pointer-events: none;
+}
+.panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+.panel::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
+.panel__head { text-align: center; }
+
+.chip {
+  display: inline-block;
+  padding: 4px 14px;
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  border-radius: 999px;
+}
+
+.panel__city {
+  margin: 12px 0 0;
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+.panel__country {
+  display: inline-block;
+  margin-left: 9px;
+  padding: 2px 7px;
+  font-family: "Space Mono", monospace;
+  font-style: normal;
+  font-size: 0.58rem;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  vertical-align: middle;
+}
+
+/* ── 온도 ─────────────────────────────────────── */
+.panel__now { text-align: center; margin: 6px 0 4px; }
+
+.panel__temp {
+  margin: 0;
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(5.4rem, 24vw, 8rem);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  text-shadow: 0 0 42px color-mix(in srgb, var(--accent) 46%, transparent);
+}
+
+.panel__unit {
+  font-size: 0.24em;
+  vertical-align: super;
+  margin-left: 0.06em;
+  color: var(--gold);
+}
+
+.panel__desc {
+  margin: 2px 0 0;
+  font-size: 0.9rem;
+  font-weight: 300;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  color: var(--ink-dim);
+}
+
+/* ===========================================================
+   궤도 — 과거(일출) · 현재 · 미래(일몰)
+   =========================================================== */
+.arc { margin: 18px 0 6px; }
+
+.arc__svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+.arc__horizon { stroke: var(--gold-dim); stroke-width: 1; }
+.arc__tick { stroke: var(--gold-dim); stroke-width: 1; }
+
+.arc__future {
+  fill: none;
+  stroke: var(--gold-dim);
+  stroke-width: 1;
+  stroke-dasharray: 3 6;
+}
+
+.arc__past {
+  fill: none;
+  stroke: var(--gold);
+  stroke-width: 1.4;
+  transition: stroke-dashoffset 1.2s var(--ease);
+}
+
+.arc__halo {
+  fill: color-mix(in srgb, var(--accent) 30%, transparent);
+  animation: pulse 3.4s ease-in-out infinite;
+}
+
+.arc__body { fill: var(--accent); }
+
+.arc__labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-family: "Space Mono", monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+}
+
+.arc__labels em {
+  display: block;
+  font-style: normal;
+  font-size: 0.54rem;
+  letter-spacing: 0.24em;
+  color: var(--gold);
+  margin-bottom: 3px;
+}
+
+.arc__center { text-align: center; color: var(--ink); }
+.arc__labels span:last-child { text-align: right; }
+
+/* ── 관측값 ───────────────────────────────────── */
+.readings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin: 16px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--gold-dim);
+}
+
+.readings > div {
+  text-align: center;
+  border-right: 1px solid var(--gold-dim);
+}
+.readings > div:last-child { border-right: none; }
+
+.readings dt {
+  font-family: "Space Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  color: var(--gold);
+}
+
+.readings dd {
+  margin: 7px 0 0;
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+
+/* ===========================================================
+   미래 — 24시간 예보
+   =========================================================== */
+.timeline {
+  width: 100%;
+  padding: 18px 20px 16px;
+  background: var(--panel);
+  border: 1px solid var(--gold-dim);
+  border-radius: 2px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: rise 0.8s var(--ease) 0.12s both;
+}
+
+.timeline__title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 0 14px;
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.timeline__range { color: var(--ink-dim); letter-spacing: 0.1em; }
+
+.timeline__list {
+  display: flex;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.timeline__list::-webkit-scrollbar { display: none; }
+
+.timeline__item {
+  flex: 1 0 auto;
+  min-width: 46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.timeline__temp {
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: 0.85rem;
+}
+
+.timeline__bar {
+  width: 2px;
+  background: linear-gradient(180deg, var(--accent), transparent);
+  border-radius: 2px;
+  transition: height 0.8s var(--ease);
+}
+
+.timeline__hour {
+  font-family: "Space Mono", monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-dim);
+}
+
+.timeline__desc {
+  font-size: 0.52rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-dim);
+  text-align: center;
+  line-height: 1.3;
+  max-width: 52px;
+}
+
+/* ===========================================================
+   상태 화면
+   =========================================================== */
+.status {
+  width: 100%;
+  padding: 46px 26px;
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--gold-dim);
+  border-radius: 2px;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  animation: rise 0.6s var(--ease) both;
+}
+
+/* 궤도를 도는 로딩 표식 */
+.orbit {
+  position: relative;
+  display: block;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 24px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 50%;
+  animation: spin 3.2s linear infinite;
+}
+
+.orbit::before {
+  content: "";
+  position: absolute;
+  inset: 13px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 50%;
+}
+
+.orbit__dot {
+  position: absolute;
+  top: -4px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 14px var(--accent);
+}
+
+.status__label {
+  margin: 0 0 12px;
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-size: 1.25rem;
+}
+
+.status__text {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 300;
+  letter-spacing: 0.14em;
+  line-height: 1.7;
+  color: var(--ink-dim);
+}
+
+.status__note {
+  margin: 12px 0 0;
+  font-family: "Space Mono", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+}
+
+.retry {
+  margin-top: 24px;
+  padding: 10px 28px;
+  font-family: "Space Mono", monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  color: var(--gold);
+  background: transparent;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.3s var(--ease), color 0.3s var(--ease);
+}
+
+.retry:hover { background: var(--gold); color: #14121c; }
+.retry:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+/* 안내 문구 */
+.notice {
+  margin: 0;
+  padding: 7px 16px;
+  font-family: "Space Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  border: 1px solid var(--gold-dim);
+  border-radius: 999px;
+  animation: fade 0.6s var(--ease) both;
+}
+
+/* ===========================================================
+   도시 버튼
+   =========================================================== */
+.cities {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  animation: rise 0.8s var(--ease) 0.24s both;
+}
+
+.city {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 9px 4px;
+  font-family: inherit;
+  font-weight: 400;
+  font-size: clamp(0.62rem, 2.5vw, 0.76rem);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 1px solid var(--gold-dim);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.3s var(--ease), border-color 0.3s var(--ease),
+    background 0.3s var(--ease);
+}
+
+.city:first-child { flex-grow: 1.5; }
+
+.city:hover:not(:disabled) { color: var(--ink); border-color: var(--gold); }
+
+/* 선택된 도시 */
+.city--on {
+  color: #14121c;
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.city:disabled { opacity: 0.4; cursor: not-allowed; }
+.city:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+/* ===========================================================
+   서명
+   =========================================================== */
+.signature {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  padding: 4px 16px 24px;
+}
+
+.signature span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  font-family: "Space Mono", monospace;
+  font-size: 0.58rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-dim);
+  border: 1px solid var(--gold-dim);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.signature b {
+  font-family: "Bodoni Moda", Georgia, serif;
+  font-weight: 400;
+  font-size: 0.78rem;
+  color: var(--gold);
+}
+
+/* ===========================================================
+   애니메이션
+   =========================================================== */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.22); }
+}
+
+/* ===========================================================
+   반응형 & 접근성
+   =========================================================== */
+@media (max-width: 400px) {
+  .readings { grid-template-columns: repeat(2, 1fr); gap: 14px 0; }
+  .readings > div:nth-child(2) { border-right: none; }
+  .cities { flex-wrap: wrap; gap: 6px; }
+  .city { flex: 0 1 calc(33.333% - 4px); }
+  .city:first-child { flex-grow: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
